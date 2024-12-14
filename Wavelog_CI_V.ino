@@ -1,7 +1,10 @@
+// DK4DJ  2024-12-01  Code changed to work with WT32-ETH01 (hardwired Ethernet based ESP32
+
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-#include <WiFiManager.h>
-#include <WebServer.h>
+//#include <WiFiManager.h>
+#include <WebServer_WT32_ETH01.h>
+//#include <WebServer.h>
 #include <SPIFFS.h>
 #include <ESPmDNS.h>
 
@@ -61,6 +64,7 @@ size_t power_query_length = sizeof(power_query) / sizeof(power_query[0]);
 String buffer;
 DynamicJsonDocument jsonDoc(512);
 
+/*
 void connectToWifi() {
   // Create WiFiManager object
   WiFiManager wfm;
@@ -80,6 +84,7 @@ void connectToWifi() {
     delay(1000);
   }
 }
+*/
 
 void sendCIVQuery(const uint8_t *commands, size_t length) {
   newData2 = false;
@@ -387,10 +392,21 @@ void setup() {
   Serial.println(params[2]);
   Serial.print(F("CI-V-Address: "));
   Serial.println(params[3]);
-  connectToWifi();
+  //connectToWifi();
+
+  // To be called before ETH.begin()
+  WT32_ETH01_onEvent();
+
+  ETH.begin(ETH_PHY_ADDR, ETH_PHY_POWER);
+
+  // Static IP, leave without this line to get IP via DHCP
+  //ETH.config(myIP, myGW, mySN, myDNS);
+
+  WT32_ETH01_waitForConnect();
 
   Serial.print(F("IP-Address: "));
-  Serial.println(WiFi.localIP());
+//  Serial.println(WiFi.localIP());
+  Serial.println(ETH.localIP());
 
   server.on("/", handleRoot);
   server.on("/save", handleSave);
@@ -431,7 +447,9 @@ void setup() {
 void loop() {
   server.handleClient();
   XMLRPCserver.handleClient();
-  if (WiFi.status() == WL_CONNECTED) {
+  //if (WiFi.status() == WL_CONNECTED) {
+  //if (ETH.connected() == TRUE) {
+  if (ETH.linkUp() == pdTRUE) {
     time_current_baseloop = millis();
 
     //query tx-power every 5 secs
@@ -454,7 +472,8 @@ void loop() {
       post_json();
     }
   } else {
-    Serial.println(F("No connection to your WiFi-network."));
-    connectToWifi();
+    //Serial.println(F("No connection to your WiFi-network."));
+    Serial.println(F("No connection to your network."));
+    //connectToWifi();
   }
 } // end loop
