@@ -1,4 +1,5 @@
-// DK4DJ  2024-12-01  Code changed to work with WT32-ETH01 (hardwired Ethernet based ESP32
+// DK4DJ  2024-12-01  Code changed to work with WT32-ETH01 (hardwired Ethernet based ESP32)
+// DK4DJ  2024-12-29  Bugfix: Serial2 is working on port 5 and 17; parameter swapped to RXD2 and TXD2
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -37,7 +38,8 @@ const byte endMarker = 0xFD;    // Indicates where the icom signal string ends
     {"3", "IC-7000 (70h)"},
     {"4", "IC-7410 (80h)"},
     {"5", "IC-9100 (7Ch)"},
-    {"6", "IC-9700 (A2h)"}
+    {"6", "IC-9700 (A2h)"},
+    {"7", "ID-5100 (8Ch)"}
   };
 
 const byte civ_addresses[] = { // corresponding list of CI-V-Adresses to list above
@@ -47,7 +49,8 @@ const byte civ_addresses[] = { // corresponding list of CI-V-Adresses to list ab
     0x70,
     0x80,
     0x7C,
-    0xA2
+    0xA2,
+    0x8C
   };
 
 const int maxDataLength = 16;
@@ -371,7 +374,7 @@ void handleRPC() {
 
 void setup() {
   Serial.begin(115200);  // Serial console
-  Serial2.begin(19200, SERIAL_8N1, 16, 17);  // ICOM CI-V
+  Serial2.begin(19200, SERIAL_8N1, RXD2, TXD2);  // ICOM CI-V  //war: 16, 17 | ist: 5, 17
   delay(1000);
   Serial.println(F(""));
   Serial.println(F("Booting Sketch..."));
