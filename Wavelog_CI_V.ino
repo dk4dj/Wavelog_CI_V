@@ -1,16 +1,15 @@
 // DK4DJ  2024-12-01  Code changed to work with WT32-ETH01 (hardwired Ethernet based ESP32)
 // DK4DJ  2024-12-29  Bugfix: Serial2 is working on port 5 and 17; parameter swapped to RXD2 and TXD2
+// DK4DJ  2024-12-31  mDNS name and description text for Wavelog are now configurable on web interface
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
-//#include <WiFiManager.h>
 #include <WebServer_WT32_ETH01.h>
-//#include <WebServer.h>
 #include <SPIFFS.h>
 #include <ESPmDNS.h>
 
-const int numParams = 4; // number of  parameters
-String params[numParams] = {"", "", "", ""}; // initialization of parameters
+const int numParams = 6; // number of  parameters
+String params[numParams] = {"", "", "", "", "", ""}; // initialization of parameters
 WebServer server(80);
 WebServer XMLRPCserver(12345);
 
@@ -66,28 +65,6 @@ size_t power_query_length = sizeof(power_query) / sizeof(power_query[0]);
 
 String buffer;
 DynamicJsonDocument jsonDoc(512);
-
-/*
-void connectToWifi() {
-  // Create WiFiManager object
-  WiFiManager wfm;
- 
-  // Supress Debug information
-  wfm.setDebugOutput(false);
- 
-  // Remove any previous network settings
-  //wfm.resetSettings();
- 
-  if (!wfm.autoConnect("Wavelog_CI_V_AP", "12345678")) { // Ad-Hoc-WLAN as fallback to configure production WLAN
-    // Did not connect, print error message
-    Serial.println("failed to connect and hit timeout");
- 
-    // Reset and try again
-    ESP.restart();
-    delay(1000);
-  }
-}
-*/
 
 void sendCIVQuery(const uint8_t *commands, size_t length) {
   newData2 = false;
@@ -224,7 +201,7 @@ void processReceivedData(void) {
 
 void create_json(unsigned long frequency, String mode, float power) {  
   jsonDoc.clear();  
-  jsonDoc["radio"] = String(civ_options[params[3].toInt()][1]) + " Wavelog CI-V";
+  jsonDoc["radio"] = String(civ_options[params[3].toInt()][1]) + " " + String(params[4]); //+ " Wavelog CI-V"
   jsonDoc["frequency"] = frequency;
   jsonDoc["mode"] = mode;
   jsonDoc["power"] = power;
@@ -288,6 +265,10 @@ void handleRoot() {
   html += "<input type='text' id='wavelogApiEndpoint' name='wavelogApiEndpoint' value='" + params[1] + "'><br>";
   html += "<label for='wavelogApiKey'>Wavelog API Key:</label><br>";
   html += "<input type='text' id='wavelogApiKey' name='wavelogApiKey' value='" + params[2] + "'><br>";
+  html += "<label for='wavelogDescription'>Wavelog Description:</label><br>";
+  html += "<input type='text' id='wavelogDescription' name='wavelogDescription' value='" + params[4] + "'><br>";
+  html += "<label for='mDNSName'>ESP32 mDNS Name:</label><br>";
+  html += "<input type='text' id='mDNSName' name='mDNSName' value='" + params[5] + "'><br>";
   html += "<label for='TrxAddress'>Trx Address:</label><br>";
   html += "<select id='TrxAddress' name='TrxAddress'>";
 
@@ -340,6 +321,8 @@ void handleSave() {
   params[1] = server.arg("wavelogApiEndpoint");
   params[2] = server.arg("wavelogApiKey");
   params[3] = server.arg("TrxAddress");
+  params[4] = server.arg("wavelogDescription");
+  params[5] = server.arg("mDNSName");
 
   saveParametersToSPIFFS();
 
@@ -378,8 +361,7 @@ void setup() {
   delay(1000);
   Serial.println(F(""));
   Serial.println(F("Booting Sketch..."));
-  MDNS.begin("esp32-ci-v");
-
+  
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS initialization failed!");
     return;
@@ -395,7 +377,12 @@ void setup() {
   Serial.println(params[2]);
   Serial.print(F("CI-V-Address: "));
   Serial.println(params[3]);
-  //connectToWifi();
+  Serial.print(F("Description: "));
+  Serial.println(params[4]);
+  Serial.print(F("mDNS: "));
+  Serial.println(params[5]);
+
+  MDNS.begin(params[5]);
 
   // To be called before ETH.begin()
   WT32_ETH01_onEvent();
@@ -408,7 +395,6 @@ void setup() {
   WT32_ETH01_waitForConnect();
 
   Serial.print(F("IP-Address: "));
-//  Serial.println(WiFi.localIP());
   Serial.println(ETH.localIP());
 
   server.on("/", handleRoot);
@@ -450,8 +436,6 @@ void setup() {
 void loop() {
   server.handleClient();
   XMLRPCserver.handleClient();
-  //if (WiFi.status() == WL_CONNECTED) {
-  //if (ETH.connected() == TRUE) {
   if (ETH.linkUp() == pdTRUE) {
     time_current_baseloop = millis();
 
@@ -475,8 +459,6 @@ void loop() {
       post_json();
     }
   } else {
-    //Serial.println(F("No connection to your WiFi-network."));
     Serial.println(F("No connection to your network."));
-    //connectToWifi();
   }
 } // end loop
