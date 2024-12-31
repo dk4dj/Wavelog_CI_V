@@ -2,10 +2,10 @@
 ![image of configuration dialog on ESP32-webserver](https://github.com/dg9vh/Wavelog_CI_V/assets/13950650/27089ca5-64ad-4599-97f2-749915e2f707)
 
 ## Introduction
-This is a CI-V Connector for Wavelog that can be running on an ESP32 developer board.
+This is a CI-V Connector for Wavelog that can be running on an Wireless Tag WT32-ETH01 ESP32 developer board.
 
 ## Needed hardware
-* ESP 32 board
+* WT32-ETH01 board
 * 3,5 mm jack plug
 * some wire
 * diode
@@ -14,7 +14,7 @@ This is a CI-V Connector for Wavelog that can be running on an ESP32 developer b
 
 ![How a prototype of a pcb with ESP32 can look like](https://github.com/dg9vh/Wavelog_CI_V/assets/13950650/b69d722d-725e-41cc-ac18-d5fdcf4bf325)
 
-On the image above you see a prototype built on a perforated grid circuit board.
+On the image above you see a prototype built on a perforated grid circuit board with an ESP32 development board. A prototype with WT32-ETH01 looks similar.
 
 ## Wiring schedule
 [Schematics.pdf](/Documents/Schematics.pdf)
@@ -37,19 +37,17 @@ To have this working properly, you need to have your transceiver in "transceive 
 CI-V. Also it should be configured for 19200 baud on the serial output (not on USB-port!).
 
 ## Starting from Scratch
-First time you start this code (or every time until your local WiFi-network is configured, the
-ESP32 starts up with an ad-hoc-wlan with the name "Wavelog_CI_V_AP" and the pre-shared key
-12345678 to connect to the ESP32 in order to configure the production WiFi-network it should
-connect to.
-
-This is done by connecting to this WiFi-network with a client (phone, tablet, notebook, pc) and 
-open the configuration site http://192.168.4.1 to chose your network to use. Enter your PSK and 
-then the ESP32 connects to your WiFi. It should optain an ip-address in your LAN via DHCP and 
-would listen on the new ip-address with a configuration dialog.
+First time you start this code it will obtain an IP automatically by DHCP. You can see the IP
+on serial debug output or in your router. The configuration dialog could be reached by a webbrowser
+using the obtained IP.
 
 On this dialog you configure the URL of your wavelog installation (for example http://wavelog.dg9vh.de)
 and the API-endpoint (for example /index.php/api/radio). Also the Wavelog API Key is needed beneath
 the CI-V address of your transceiver (for example 0x94 for an IC-7300).
+
+Optional but useful is also to give a description text (this will be shown in Wavelog Hardware 
+interface dialog) and an mDNS name. This is useful for getting a hostname instead of an IP 
+for communicating with the WT32-ETH01.
 
 Save this and be ready to rumble :-)
 
@@ -60,3 +58,5 @@ your wavelog instance via the API to be available for logging.
 ## Credits
 Some parts of this code (for example fundamentals of the CI-V-communication) where taken from 
 Patric (DF7ZZ) and his "Antennenumschalter ESP32"-code. So thank you Patric for your inspirations!
+Also a big thank you to Kim (DG9VH) for publishing his code and the corresponding article in the 
+CQ DL magazine.
