@@ -1,5 +1,5 @@
 # Wavelog_CI_V
-![image of configuration dialog on ESP32-webserver](https://github.com/dg9vh/Wavelog_CI_V/assets/13950650/27089ca5-64ad-4599-97f2-749915e2f707)
+![image of configuration dialog on ESP32-webserver](https://github.com/user-attachments/assets/be6f4759-350b-4999-8a51-d55a53d7c620)
 
 ## Introduction
 This is a CI-V Connector for Wavelog that can be running on an Wireless Tag WT32-ETH01 ESP32 developer board.
