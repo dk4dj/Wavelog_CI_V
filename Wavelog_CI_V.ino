@@ -2,6 +2,7 @@
 // DK4DJ  2024-12-29  Bugfix: Serial2 is working on port 5 and 17; parameter swapped to RXD2 and TXD2
 // DK4DJ  2024-12-31  mDNS name and description text for Wavelog are now configurable on web interface
 // DK4DJ  2025-04-05  Cyclic request of frequency and mode added
+// DK4DJ  2025-06-15  Added changes from original code
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -300,18 +301,18 @@ void handleRoot() {
   html += "</div>";
   html += "<script>";
   html += R"JS(
-setInterval(function() {
-  fetch('/trx')
-    .then(response => response.json())
-    .then(data => {
-      document.getElementById('qrg').textContent = (data.qrg/1000)+'kHz';
-      document.getElementById('mode').textContent = data.mode;
-    })
-    .catch(error => {
-      console.error('Fetch error:', error);
-    });
-}, 1000);
-)JS";
+            setInterval(function() {
+                fetch('/trx')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('qrg').textContent = (data.qrg/1000)+'kHz';
+                    document.getElementById('mode').textContent = data.mode;
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+                });
+            }, 1000);
+          )JS";
   html += "</script></body></html>";
 
 
