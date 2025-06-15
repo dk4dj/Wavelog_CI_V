@@ -1,6 +1,7 @@
 // DK4DJ  2024-12-01  Code changed to work with WT32-ETH01 (hardwired Ethernet based ESP32)
 // DK4DJ  2024-12-29  Bugfix: Serial2 is working on port 5 and 17; parameter swapped to RXD2 and TXD2
 // DK4DJ  2024-12-31  mDNS name and description text for Wavelog are now configurable on web interface
+// DK4DJ  2025-04-05  Cyclic request of frequency and mode added
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -15,7 +16,9 @@ WebServer XMLRPCserver(12345);
 
 unsigned long time_current_baseloop;
 unsigned long time_last_baseloop;
-#define BASELOOP_TICK 5000 // = 5 seconds
+unsigned long time_last_update;
+#define BASELOOP_TICK 1000 // = 1 seconds war: 5000
+#define DEBOUNCE_TIME 1500 // = 1,5sec. process ONLY if TRX has settled
 
 unsigned long frequency = 0;
 float power = 0.0;
@@ -239,6 +242,14 @@ void post_json() {
     http.end(); 
 }
 
+void handleTrx() {
+  jsonDoc.clear();  
+  jsonDoc["qrg"] = frequency;
+  jsonDoc["mode"] = mode_str;
+  serializeJson(jsonDoc, buffer);
+  server.send(200, "application/json", buffer);
+}
+
 void handleRoot() {
   String html = "<!DOCTYPE html>";
   html += "<html>";
@@ -258,6 +269,7 @@ void handleRoot() {
   html += "<body>";
   html += "<div class=\"container\">";
   html += "<h1>ESP32 Wavelog CI-V Configuration</h1>";
+  html += "<p>Current QRG/Mode from CI-V:&nbsp;<span id='qrg'></span>&nbsp;/&nbsp;<span id='mode'></span></p>";
   html += "<form action='/save' method='post'>";
   html += "<label for='wavelogUrl'>Wavelog URL:</label><br>";
   html += "<input type='text' id='wavelogUrl' name='wavelogUrl' value='" + params[0] + "'><br>";
@@ -286,8 +298,22 @@ void handleRoot() {
   html += "<button type='submit' class='btn-reboot'>Reboot ESP32</button>";
   html += "</form>";
   html += "</div>";
-  html += "</body>";
-  html += "</html>";
+  html += "<script>";
+  html += R"JS(
+setInterval(function() {
+  fetch('/trx')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('qrg').textContent = (data.qrg/1000)+'kHz';
+      document.getElementById('mode').textContent = data.mode;
+    })
+    .catch(error => {
+      console.error('Fetch error:', error);
+    });
+}, 1000);
+)JS";
+  html += "</script></body></html>";
+
 
   server.send(200, "text/html", html);
 }
@@ -357,7 +383,7 @@ void handleRPC() {
 
 void setup() {
   Serial.begin(115200);  // Serial console
-  Serial2.begin(19200, SERIAL_8N1, RXD2, TXD2);  // ICOM CI-V  //war: 16, 17 | ist: 5, 17
+  Serial2.begin(4800, SERIAL_8N1, RXD2, TXD2);  // ICOM CI-V  //war: 16, 17 | ist: 5, 17
   delay(1000);
   Serial.println(F(""));
   Serial.println(F("Booting Sketch..."));
@@ -398,6 +424,7 @@ void setup() {
   Serial.println(ETH.localIP());
 
   server.on("/", handleRoot);
+  server.on("/trx", handleTrx);
   server.on("/save", handleSave);
   server.on("/reboot", handleReboot);
   server.begin();
@@ -439,15 +466,18 @@ void loop() {
   if (ETH.linkUp() == pdTRUE) {
     time_current_baseloop = millis();
 
-    //query tx-power every 5 secs
+    //query tx-power, qrg and mode every sec
     if ((time_current_baseloop - time_last_baseloop) > BASELOOP_TICK) {
       getpower();
+      //getqrg();
+      //getmode();
       time_last_baseloop = time_current_baseloop;
     }
     
     if (params[3].toInt() >= 0) 
       geticomdata();
     if (newData2) {
+      time_last_update = millis(); //new
       processReceivedData();
     }
     newData2 = false;
