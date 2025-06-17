@@ -3,6 +3,7 @@
 // DK4DJ  2024-12-31  mDNS name and description text for Wavelog are now configurable on web interface
 // DK4DJ  2025-04-05  Cyclic request of frequency and mode added
 // DK4DJ  2025-06-15  Added changes from original code
+// DK4DJ  2025-06-17  CI-V Baudrate changed to 38400
 
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
@@ -384,7 +385,7 @@ void handleRPC() {
 
 void setup() {
   Serial.begin(115200);  // Serial console
-  Serial2.begin(4800, SERIAL_8N1, RXD2, TXD2);  // ICOM CI-V  //war: 16, 17 | ist: 5, 17
+  Serial2.begin(38400, SERIAL_8N1, RXD2, TXD2);  // ICOM CI-V  //war: 16, 17 | ist: 5, 17
   delay(1000);
   Serial.println(F(""));
   Serial.println(F("Booting Sketch..."));
